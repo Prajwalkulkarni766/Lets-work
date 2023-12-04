@@ -2,15 +2,14 @@ const express = require("express")
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const Profile = require("../models/profile");
-const Skill = require("../models/skill");
-const Experience = require("../models/experience");
-const Education = require("../models/education");
 const fetchUser = require("../middleware/fetchUser");
+const fetchProfile = require("../middleware/fetchProfile");
 
 router.use(fetchUser);
 
+// create a new work profile
 router.post("/profile",
-    body("headLine", "Headline cannot be empty").isLength({ min: 1 }),
+    body("headline", "Headline cannot be empty").isLength({ min: 1 }),
     body("summary", "Summary cannot be empty").isLength({ min: 1 }),
     body("industry", "Industry cannot be empty").isLength({ min: 1 }),
     body("location", "Location cannot be empty").isLength({ min: 1 }),
@@ -22,118 +21,79 @@ router.post("/profile",
                 return res.status(400).json({ errors: errors.array() });
             }
 
-            const { headLine, summary, industry, location, industryType, website } = req.body;
+            const { userId, headline, summary, industry, location, industryType, website } = req.body;
 
             const newProfile = await Profile({
-                user: req.body.userId,
-                headline: headLine,
+                user: userId,
+                headline: headline,
                 summary: summary,
                 industry: industry,
-                location: location,
                 industryType: industryType || undefined,
                 website: website || undefined,
+                location: location,
             });
 
             await newProfile.save();
 
-            res.status(200).json({ mesaage: "Work profile added" });
+            res.status(200).json({ message: "Work profile added" });
 
         } catch (e) {
             console.error("error => ", e);
-            return res.status(500).json({ mesaage: "Internal server error" });
+            return res.status(500).json({ message: "Internal server error" });
         }
     });
 
-router.post("/skill",
-    body("name", "Enter valid skill name").isLength({ min: 1 }),
-    async (req, res) => {
-        try {
-            const errors = validationResult(req);
+router.use(fetchProfile);
 
-            if (!errors.isEmpty()) {
-                return res.status(400).json({ errors: errors.array() });
-            }
+// update existing work profile
+router.put("/profile", async (req, res) => {
+    try {
 
-            const newSkill = await Skill({
-                user: req.body.userId,
-                name: req.body.name,
-            });
+        const { userId, profileId, headline, summary, industry, industryType, website, location } = req.body;
 
-            await newSkill.save();
+        const filter = { _id: profileId, user: userId };
 
-            res.status(200).json({ mesaage: "New skill added" });
-        } catch (e) {
-            console.error("error => ", e);
-            return res.status(500).json({ mesaage: "Internal server error" });
+        const update = {
+            headline: headline || undefined,
+            summary: summary || undefined,
+            industry: industry || undefined,
+            industryType: industryType || undefined,
+            website: website || undefined,
+            location: location || undefined,
+        };
+
+        const updateProfile = await Profile.updateOne(filter, update);
+
+        if (updateProfile.modifiedCount == 1) {
+            res.status(200).json({ message: "Profile updated" });
         }
-    });
-
-router.post("/experience",
-    body("companyName", "Enter valid company name").isLength({ min: 1 }),
-    body("title", "Enter valid job title").isLength({ min: 1 }),
-    body("location", "Enter valid job location").isLength({ min: 1 }),
-    body("startDate", "Enter valid job joining date").isDate(),
-    body("endDate", "Enter valid job left date").isDate(),
-    async (req, res) => {
-        try {
-            const errors = validationResult(req);
-
-            if (!errors.isEmpty()) {
-                return res.status(400).json({ errors: errors.array() });
-            }
-            const { companyName, title, location, startDate, endDate } = req.body;
-
-            const newExperience = await Experience({
-                user: req.body.userId,
-                companyName: companyName,
-                title: title,
-                location: location,
-                startDate: startDate,
-                endDate: endDate,
-            });
-
-            await newExperience.save();
-
-            res.status(200).json({ mesaage: "Experience added" });
-        } catch (e) {
-            console.error("error => ", e);
-            return res.status(500).json({ mesaage: "Internal server error" });
+        else {
+            res.status(400).json({ message: "Problem while updating profile. You might have provided another profile id related with another user or vice versa" });
         }
-    });
 
-router.post("/education",
-    body("schoolName", "Enter valid school name").isLength({ min: 1 }),
-    body("secondarySchoolName", "Enter valid secondary school name").isLength({ min: 1 }),
-    body("collegeName", "Enter valid college name").isLength({ min: 1 }),
-    body("degree", "Enter valid degree name").isLength({ min: 1 }),
-    body("fieldOfStudy", "").isLength({ min: 1 }),
-    async (req, res) => {
-        try {
-            const errors = validationResult(req);
+    } catch (e) {
+        console.error("error => ", e);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+});
 
-            if (!errors.isEmpty()) {
-                return res.status(400).json({ errors: errors.array() });
-            }
+// delete existing work profile
+router.delete("/profile", async (req, res) => {
+    try {
+        const { userId, profileId } = req.body;
 
-            const { schoolName, secondarySchoolName, collegeName, degree, fieldOfStudy } = req.body;
+        const deletePorfile = await Profile.deleteOne({ user: userId, _id: profileId });
 
-            const education = await Education({
-                user: req.body.userId,
-                schoolName: schoolName,
-                secondarySchoolName: secondarySchoolName,
-                collegeName: collegeName,
-                degree: degree,
-                fieldOfStudy: fieldOfStudy,
-            });
-
-            await education.save();
-
-            res.status(200).json({ mesaage: "Education added" });
-        } catch (e) {
-            console.error("error => ", e);
-            return res.status(500).json({ mesaage: "Internal server error" });
+        if (deletePorfile.deletedCount == 1) {
+            res.status(200).json({ message: "Profile deleted" });
         }
-    });
+        else {
+            res.status(400).json({ message: "Problem while deleting profile. You might have provided another profile id related with another user or vice versa" });
+        }
+    } catch (e) {
+        console.error("error => ", e);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+});
 
 module.exports = router;
-// FIX-ME: Remove userId from request and test it with session merging with client-end

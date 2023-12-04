@@ -9,8 +9,8 @@ const profileSchema = new Schema({
     headline: { type: String, required: true },
     summary: { type: String, required: true },
     industry: { type: String, required: true },
-    industryType: { type: String },
-    website: { type: String },
+    industryType: { type: String, default: "" },
+    website: { type: String, default: "" },
     location: { type: String, required: true },
 });
 
