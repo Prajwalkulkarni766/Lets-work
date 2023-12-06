@@ -6,6 +6,23 @@ const fetchUser = require("../middleware/fetchUser");
 
 router.use(fetchUser);
 
+// get experience
+router.get("/experience", async (req, res) => {
+    try {
+        const getExperience = await Experience.find({ user: req.body.userId });
+
+        if (getExperience.length > 0) {
+            res.status(200).json(getExperience);
+        }
+        else {
+            res.status(400).json({ message: "Experience not found" });
+        }
+    } catch (e) {
+        console.error("error => ", e);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+});
+
 // add a new experience
 router.post("/experience",
     body("companyName", "Enter valid company name").isLength({ min: 1 }),

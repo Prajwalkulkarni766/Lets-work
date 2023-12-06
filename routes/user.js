@@ -1,16 +1,79 @@
 const express = require("express")
 const router = express.Router();
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const User = require("../models/user");
-const secreteKey = process.env.JWT_SECRET_KEY;
 const fetchUser = require("../middleware/fetchUser");
+const upload = require("express-fileupload");
+const path = require("path");
 
 router.use(fetchUser);
 
+router.use(upload());
+
+// get user
+router.get("/user", async (req, res) => {
+    try {
+        const { userId } = req.body;
+
+        const getUser = await User.findById(userId);
+
+        res.status(200).json(getUser);
+    }
+    catch (e) {
+        console.error("error => ", e);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+})
+
+// upload profile image
+router.post("/user", async (req, res) => {
+    try {
+
+        const { userId } = req.body;
+
+        const getUser = await User.findById(userId);
+
+        if (getUser.profilePic && getUser.profilePic !== "") {
+            const currentDirectory = process.cwd();
+            const profileImageUrl = path.join(currentDirectory, getUser.profilePic);
+            fs.unlinkSync(profileImageUrl);
+        }
+
+        const file = req.files.profileImg;
+
+        const uniqueFileName = Date.now() + "-" + file.name;
+
+        const mvFileAsync = (filePath, destination) => {
+            return new Promise((resolve, reject) => {
+                file.mv(filePath, function (err) {
+                    if (err) {
+                        console.error("Error uploading file:", err);
+                        reject(err);
+                    } else {
+                        resolve(destination);
+                    }
+                });
+            });
+        };
+
+        const destinationPath = await mvFileAsync(path.join("./docs", uniqueFileName));
+
+        const update = { profilePic: "/docs/" + uniqueFileName };
+
+        const updateUser = await User.findByIdAndUpdate(userId, update);
+
+        res.status(200).json({ message: "Profile image uploaded" });
+
+    }
+    catch (e) {
+        console.error("error => ", e);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+});
+
 // update the user information
-router.put("/updateUser",
+router.put("/user",
     body("userName", "Enter a valid name").isLength({ min: 1 }),
     body("userLocation", "Enter a valid location").isLength({ min: 1 }),
     body("userEmail", "Enter a valid email").isEmail(),
@@ -56,7 +119,7 @@ router.put("/updateUser",
     });
 
 // delete the user account
-router.delete("/deleteUser",
+router.delete("/user",
     body("userEmail", "Enter a valid email").isEmail(),
     body("userPassword", "Enter a valid password. Password must contain at least 8 and at most 16 characters.").isLength({ min: 8, max: 16 }),
     async (req, res) => {

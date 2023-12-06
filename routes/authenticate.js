@@ -32,7 +32,9 @@ router.post("/signin",
                 return res.status(400).json({ message: "Incorrect password" });
             }
 
-            const authToken = jwt.sign({ userId: existingUser._id }, secreteKey);
+            const authToken = jwt.sign({ userId: existingUser._id }, secreteKey, {
+                expiresIn: 86400
+            });
 
             res.cookie('token', authToken);
 
@@ -80,10 +82,12 @@ router.post("/signup",
 
             const newUserId = newUser._id;
 
-            const authToken = jwt.sign({ userId: newUserId }, secreteKey);
+            const authToken = jwt.sign({ userId: newUserId }, secreteKey, {
+                expiresIn: 86400
+            });
 
             res.cookie('token', authToken);
-            // req.session.userId = newUserId;
+
             res.status(201).json({ message: "Success" });
         } catch (e) {
             console.error("error => ", e);

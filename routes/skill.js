@@ -7,6 +7,24 @@ const fetchSkill = require("../middleware/fetchSkill");
 
 router.use(fetchUser);
 
+// get skills
+router.get("/skill", async (req, res) => {
+    try {
+        const getSkill = await Skill.find({ user: req.body.userId });
+
+        if (getSkill.length > 0) {
+            res.status(200).json(getSkill);
+        }
+        else {
+            res.status(400).json({ message: "Skill not found" });
+        }
+    }
+    catch (e) {
+        console.error("error => ", e);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+});
+
 // add a new skill
 router.post("/skill",
     body("name", "Enter valid skill name").isLength({ min: 1 }),

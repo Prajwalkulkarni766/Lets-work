@@ -6,6 +6,24 @@ const fetchUser = require("../middleware/fetchUser");
 
 router.use(fetchUser);
 
+// get education
+router.get("/education", async (req, res) => {
+    try {
+        const getEducation = await Education.findOne({ user: req.body.userId });
+
+        if (getEducation) {
+            res.status(200).json(getEducation);
+        }
+        else {
+            res.status(400).json({ message: "Education not found" });
+        }
+
+    } catch (e) {
+        console.error("error => ", e);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+});
+
 // add the education
 router.post("/education",
     body("schoolName", "Enter valid school name").isLength({ min: 1 }),
@@ -23,18 +41,26 @@ router.post("/education",
 
             const { userId, schoolName, secondarySchoolName, collegeName, degree, fieldOfStudy } = req.body;
 
-            const education = await Education({
-                user: userId,
-                schoolName: schoolName,
-                secondarySchoolName: secondarySchoolName,
-                collegeName: collegeName,
-                degree: degree,
-                fieldOfStudy: fieldOfStudy,
-            });
+            const findEducation = await Education.find({ user: userId });
 
-            await education.save();
+            if (findEducation.length == 0) {
+                const education = await Education({
+                    user: userId,
+                    schoolName: schoolName,
+                    secondarySchoolName: secondarySchoolName,
+                    collegeName: collegeName,
+                    degree: degree,
+                    fieldOfStudy: fieldOfStudy,
+                });
 
-            res.status(200).json({ message: "Education added" });
+                await education.save();
+
+                res.status(200).json({ message: "Education added" });
+            }
+            else {
+                res.status(400).json({ message: "Education already present" });
+            }
+
         } catch (e) {
             console.error("error => ", e);
             return res.status(500).json({ message: "Internal server error" });

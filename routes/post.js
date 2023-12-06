@@ -7,10 +7,74 @@ const Like = require("../models/like");
 const Comment = require("../models/comment");
 const fetchUser = require("../middleware/fetchUser");
 const fetchPost = require("../middleware/fetchPost");
+const upload = require("express-fileupload");
+const path = require("path");
 
 router.use(fetchUser);
 
+router.use(upload());
+
 // add a post
+// router.post("/post",
+//     body("postContent", "Post content cannot be empty").isLength({ min: 1 }),
+//     async (req, res) => {
+//         try {
+//             const errors = validationResult(req);
+
+//             if (!errors.isEmpty()) {
+//                 return res.status(400).json({ errors: errors.array() });
+//             }
+
+//             let imagePath = "";
+
+//             if (req.files && req.files.image) {
+
+//                 const file = req.files.image;
+
+//                 const uniqueFileName = Date.now() + "-" + file.name;
+
+//                 const mvFileAsync = (filePath, destination) => {
+//                     return new Promise((resolve, reject) => {
+//                         file.mv(filePath, function (err) {
+//                             if (err) {
+//                                 console.error("Error uploading file:", err);
+//                                 reject(err);
+//                             } else {
+//                                 resolve(destination);
+//                             }
+//                         });
+//                     });
+//                 };
+
+//                 imagePath = await mvFileAsync(path.join("./docs", uniqueFileName))
+//                     .catch((err) => {
+//                         throw new Error(err.message || "File upload failed");
+//                     });
+//             }
+
+//             const { userId, postContent } = req.body;
+
+//             console.log(imagePath)
+
+//             const newPost = await Post({
+//                 user: userId,
+//                 image: imagePath || undefined,
+//                 content: postContent,
+//             });
+
+//             await newPost.save();
+
+//             const postId = newPost._id;
+
+//             res.status(200).json({ message: "Success", postId });
+//         }
+//         catch (e) {
+//             console.error("error => ", e);
+//             return res.status(500).json({ message: "Internal server error" });
+//         }
+//     });
+
+
 router.post("/post",
     body("postContent", "Post content cannot be empty").isLength({ min: 1 }),
     async (req, res) => {
@@ -21,24 +85,54 @@ router.post("/post",
                 return res.status(400).json({ errors: errors.array() });
             }
 
+            let imagePath = "";
+
+            if (req.files && req.files.image) {
+                const file = req.files.image;
+
+                const uniqueFileName = Date.now() + "-" + file.name;
+
+                const mvFileAsync = (filePath, destination) => {
+                    return new Promise((resolve, reject) => {
+                        file.mv(filePath, function (err) {
+                            if (err) {
+                                console.error("Error uploading file:", err);
+                                reject(new Error("File upload failed"));
+                            } else {
+                                resolve(destination);
+                            }
+                        });
+                    });
+                };
+
+                try {
+                    await mvFileAsync(path.join("./docs", uniqueFileName));
+                    imagePath = "/docs/" + uniqueFileName;
+                } catch (err) {
+                    console.error("Error uploading file:", err);
+                    throw new Error("File upload failed");
+                }
+            }
+
             const { userId, postContent } = req.body;
 
-            const newPost = await Post({
+            const newPost = await Post.create({
                 user: userId,
+                image: imagePath || undefined,
                 content: postContent,
             });
-
-            await newPost.save();
 
             const postId = newPost._id;
 
             res.status(200).json({ message: "Success", postId });
-        }
-        catch (e) {
-            console.error("error => ", e);
-            return res.status(500).json({ message: "Internal server error" });
+            
+        } catch (e) {
+            console.error("Error:", e);
+            return res.status(500).json({ message: e.message || "Internal server error" });
         }
     });
+
+
 
 router.use(fetchPost);
 

@@ -7,6 +7,25 @@ const fetchProfile = require("../middleware/fetchProfile");
 
 router.use(fetchUser);
 
+// get profile
+router.get("/profile", async (req, res) => {
+    try {
+        const getProfile = await Profile.find({ user: req.body.userId });
+
+        if (getProfile.length > 0) {
+            res.status(200).json(getProfile);
+        }
+        else {
+            res.status(400).json({ message: "Profile not found" });
+        }
+
+    }
+    catch (e) {
+        console.error("error => ", e);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+});
+
 // create a new work profile
 router.post("/profile",
     body("headline", "Headline cannot be empty").isLength({ min: 1 }),

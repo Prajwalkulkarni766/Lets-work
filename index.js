@@ -3,7 +3,6 @@ const cors = require('cors');
 const session = require('express-session');
 const connectToMongoose = require("./db");
 const app = express();
-const multer = require("multer");
 const port = process.env.PORT || 5000;
 
 // connecting to the database
@@ -33,6 +32,7 @@ app.use("/api/skills", require("./routes/skill"));
 app.use("/api/experiences", require("./routes/experience"));
 app.use("/api/education", require("./routes/education"));
 app.use("/api/users", require("./routes/user"));
+app.use("/api/connections", require("./routes/connection"));
 
 app.listen(3000);
 

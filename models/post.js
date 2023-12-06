@@ -6,6 +6,7 @@ const postsSchema = new Schema({
         required: true,
         ref: 'User'
     },
+    image: { type: String },
     content: { type: String, required: true },
     postDate: { type: Date, default: Date.now },
 });
