@@ -1,21 +1,36 @@
-const express = require("express")
+const express = require("express");
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const Education = require("../models/education");
 const fetchUser = require("../middleware/fetchUser");
+const getUserId = require("../getUserId");
 
 router.use(fetchUser);
 
-// get education
+// Validation middleware
+const validateEducationId = body("educationId").custom((value) => {
+    if (!mongoose.Types.ObjectId.isValid(value)) {
+        return Promise.reject("Enter a valid education id");
+    }
+    return Promise.resolve();
+});
+
+const validateSchoolName = body("schoolName", "Enter valid school name").isLength({ min: 1 });
+const validateSecondarySchoolName = body("secondarySchoolName", "Enter valid secondary school name").isLength({ min: 1 });
+const validateCollegeName = body("collegeName", "Enter valid college name").isLength({ min: 1 });
+const validateDegree = body("degree", "Enter valid degree name").isLength({ min: 1 });
+const validateFieldOfStudy = body("fieldOfStudy", "Enter valid field of study").isLength({ min: 1 });
+
+// Get education
 router.get("/education", async (req, res) => {
     try {
-        const getEducation = await Education.findOne({ user: req.body.userId });
+        const userId = await getUserId(req);
+        const getEducation = await Education.findOne({ user: userId });
 
         if (getEducation) {
             res.status(200).json(getEducation);
-        }
-        else {
-            res.status(400).json({ message: "Education not found" });
+        } else {
+            res.status(404).json({ message: "Education not found" });
         }
 
     } catch (e) {
@@ -24,13 +39,13 @@ router.get("/education", async (req, res) => {
     }
 });
 
-// add the education
+// Add education
 router.post("/education",
-    body("schoolName", "Enter valid school name").isLength({ min: 1 }),
-    body("secondarySchoolName", "Enter valid secondary school name").isLength({ min: 1 }),
-    body("collegeName", "Enter valid college name").isLength({ min: 1 }),
-    body("degree", "Enter valid degree name").isLength({ min: 1 }),
-    body("fieldOfStudy", "").isLength({ min: 1 }),
+    validateSchoolName,
+    validateSecondarySchoolName,
+    validateCollegeName,
+    validateDegree,
+    validateFieldOfStudy,
     async (req, res) => {
         try {
             const errors = validationResult(req);
@@ -39,27 +54,25 @@ router.post("/education",
                 return res.status(400).json({ errors: errors.array() });
             }
 
-            const { userId, schoolName, secondarySchoolName, collegeName, degree, fieldOfStudy } = req.body;
+            const userId = await getUserId(req);
+            const findEducation = await Education.findOne({ user: userId });
 
-            const findEducation = await Education.find({ user: userId });
-
-            if (findEducation.length == 0) {
-                const education = await Education({
-                    user: userId,
-                    schoolName: schoolName,
-                    secondarySchoolName: secondarySchoolName,
-                    collegeName: collegeName,
-                    degree: degree,
-                    fieldOfStudy: fieldOfStudy,
-                });
-
-                await education.save();
-
-                res.status(200).json({ message: "Education added" });
+            if (findEducation) {
+                return res.status(400).json({ message: "Education already present" });
             }
-            else {
-                res.status(400).json({ message: "Education already present" });
-            }
+
+            const { schoolName, secondarySchoolName, collegeName, degree, fieldOfStudy } = req.body;
+
+            const education = await Education.create({
+                user: userId,
+                schoolName,
+                secondarySchoolName,
+                collegeName,
+                degree,
+                fieldOfStudy,
+            });
+
+            res.status(200).json({ message: "Education added" });
 
         } catch (e) {
             console.error("error => ", e);
@@ -67,36 +80,46 @@ router.post("/education",
         }
     });
 
-// update education
-router.put("/education", async (req, res) => {
-    try {
-        const { userId, educationId, schoolName, secondarySchoolName, collegeName, degree, fieldOfStudy } = req.body;
+// Update education
+router.put("/education",
+    validateEducationId,
+    validateSchoolName,
+    validateSecondarySchoolName,
+    validateCollegeName,
+    validateDegree,
+    validateFieldOfStudy,
+    async (req, res) => {
+        try {
+            const errors = validationResult(req);
 
-        const filter = { _id: educationId, user: userId };
+            if (!errors.isEmpty()) {
+                return res.status(400).json({ errors: errors.array() });
+            }
 
-        const update = {
-            schoolName: schoolName || undefined,
-            secondarySchoolName: secondarySchoolName || undefined,
-            collegeName: collegeName || undefined,
-            degree: degree || undefined,
-            fieldOfStudy: fieldOfStudy || undefined,
-        };
+            const userId = await getUserId(req);
+            const { educationId, schoolName, secondarySchoolName, collegeName, degree, fieldOfStudy } = req.body;
 
-        const updateEducation = await Education.updateOne(filter, update);
+            const filter = { _id: educationId, user: userId };
+            const update = {
+                schoolName: schoolName || undefined,
+                secondarySchoolName: secondarySchoolName || undefined,
+                collegeName: collegeName || undefined,
+                degree: degree || undefined,
+                fieldOfStudy: fieldOfStudy || undefined,
+            };
 
-        console.log(updateEducation);
+            const updateEducation = await Education.updateOne(filter, update);
 
-        if (updateEducation) {
-            res.status(200).json({ message: "Education updated" });
+            if (updateEducation.modifiedCount === 1) {
+                res.status(200).json({ message: "Education updated" });
+            } else {
+                res.status(404).json({ message: "Education not found" });
+            }
+
+        } catch (e) {
+            console.error("error => ", e);
+            return res.status(500).json({ message: "Internal server error" });
         }
-        else {
-            res.status(400).json({ message: "Problem while updating education" });
-        }
-
-    } catch (e) {
-        console.error("error => ", e);
-        return res.status(500).json({ message: "Internal server error" });
-    }
-})
+    });
 
 module.exports = router;

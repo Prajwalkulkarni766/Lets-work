@@ -4,85 +4,99 @@ const mongoose = require("mongoose");
 const { body, validationResult } = require('express-validator');
 const fetchUser = require("../middleware/fetchUser");
 const Connection = require("../models/connection");
+const getUserId = require("../getUserId");
 
 router.use(fetchUser);
 
-router.post("/connection",
-    body("connectionWith").custom((value) => {
-        if (!mongoose.Types.ObjectId.isValid(value)) {
-            return Promise.reject("Enter a valid connection with id");
+// get connection
+router.get("/connection", async (req, res) => {
+    try {
+        const userId = await getUserId(req.header("token"));
+
+        const connections = await Connection.find({
+            $or: [{ user: userId }, { connectionUserId: userId }],
+        }).lean();
+
+        res.status(200).json(connections);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
+// to create or update connection
+router.post("/connection", async (req, res) => {
+    try {
+        // Basic validation
+        if (!mongoose.Types.ObjectId.isValid(req.body.connectionWith)) {
+            return res.status(400).json({ message: "Invalid connection ID" });
         }
-        return Promise.resolve();
-    }),
-    async (req, res) => {
-        try {
-            const errors = validationResult(req);
 
-            if (!errors.isEmpty()) {
-                return res.status(400).json({ errors: errors.array() });
-            }
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
 
-            const { userId, connectionWith } = req.body;
+        const userId = await getUserId(req.header("token"));
+        const { connectionWith } = req.body;
 
-            const findConnection = await Connection.find({
+        // Check for existing connection
+        const existingConnection = await Connection.findOne({
+            $or: [
+                { user: userId, connectionUserId: connectionWith },
+                { user: connectionWith, connectionUserId: userId },
+            ],
+        });
+
+        if (existingConnection) {
+            return res.status(400).json({ message: "Connection already present" });
+        }
+
+        // Create or update connection
+        await Connection.findOneAndUpdate(
+            {
                 $or: [
                     { user: userId, connectionUserId: connectionWith },
                     { user: connectionWith, connectionUserId: userId },
                 ],
-            });
-
-            if (findConnection.length > 0) {
-                res.status(400).json({ message: "Connection already present" });
-            }
-
-            const newConnection = await Connection({
+            },
+            {
                 user: userId,
                 connectionUserId: connectionWith,
-            });
+            },
+            { upsert: true }
+        );
 
-            await newConnection.save();
+        res.status(200).json({ message: "Connection successful" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
 
-            const newConnectionId = newConnection._id;
+// to remove connection
+router.delete("/connection", async (req, res) => {
+    try {
+        const errors = validationResult(req);
 
-            res.status(200).json({ message: "Connection successful", id: newConnectionId });
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
         }
-        catch (e) {
-            console.error("error => ", e);
-            return res.status(500).json({ message: "Internal server error" });
+
+        const { connectionId } = req.body;
+
+        const deletedConnection = await Connection.findByIdAndDelete(connectionId);
+
+        if (deletedConnection) {
+            res.status(200).json({ message: "Connection deleted" });
+        } else {
+            res.status(400).json({ message: "Connection not found" });
         }
-    });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
 
-router.delete("/connection",
-    body("connectionId").custom((value) => {
-        if (!mongoose.Types.ObjectId.isValid(value)) {
-            return Promise.reject("Enter a valid connection id");
-        }
-        return Promise.resolve();
-    }),
-    async (req, res) => {
-        try {
-            const errors = validationResult(req);
-
-            if (!errors.isEmpty()) {
-                return res.status(400).json({ errors: errors.array() });
-            }
-
-            const { connectionId } = req.body;
-
-            const deleteConnection = await Connection.findByIdAndDelete(connectionId);
-
-            if (deleteConnection) {
-                res.status(200).json({ message: "Connection deleted" });
-            }
-            else {
-                res.status(400).json({ message: "Problem while deleting the connection" });
-            }
-
-        }
-        catch (e) {
-            console.error("error => ", e);
-            return res.status(500).json({ message: "Internal server error" });
-        }
-    });
 
 module.exports = router;

@@ -4,23 +4,35 @@ const { body, validationResult } = require('express-validator');
 const Profile = require("../models/profile");
 const fetchUser = require("../middleware/fetchUser");
 const fetchProfile = require("../middleware/fetchProfile");
+const getUserId = require("../getUserId");
 
 router.use(fetchUser);
+
+// Centralized User ID Retrieval
+const getUserIdFromToken = async (req) => {
+    return await getUserId(req.header('token'));
+};
+
+// Constants for Response Messages
+const SUCCESS_MESSAGE = "Success";
+const PROFILE_NOT_FOUND_MESSAGE = "Profile not found";
+const PROFILE_ALREADY_CREATED_MESSAGE = "Profile already created";
+const PROFILE_UPDATED_MESSAGE = "Profile updated";
+const PROFILE_DELETED_MESSAGE = "Profile deleted";
+const PROFILE_DELETE_ERROR_MESSAGE = "Problem while deleting profile. You might have provided another profile id related to another user or vice versa";
 
 // get profile
 router.get("/profile", async (req, res) => {
     try {
-        const getProfile = await Profile.find({ user: req.body.userId });
+        const userId = await getUserIdFromToken(req);
+        const getProfile = await Profile.find({ user: userId });
 
         if (getProfile.length > 0) {
             res.status(200).json(getProfile);
+        } else {
+            res.status(400).json({ message: PROFILE_NOT_FOUND_MESSAGE });
         }
-        else {
-            res.status(400).json({ message: "Profile not found" });
-        }
-
-    }
-    catch (e) {
+    } catch (e) {
         console.error("error => ", e);
         return res.status(500).json({ message: "Internal server error" });
     }
@@ -40,7 +52,14 @@ router.post("/profile",
                 return res.status(400).json({ errors: errors.array() });
             }
 
-            const { userId, headline, summary, industry, location, industryType, website } = req.body;
+            const userId = await getUserIdFromToken(req);
+            const { headline, summary, industry, location, industryType, website } = req.body;
+
+            const findProfile = await Profile.find({ user: userId });
+
+            if (findProfile.length > 0) {
+                return res.status(400).json({ message: PROFILE_ALREADY_CREATED_MESSAGE });
+            }
 
             const newProfile = await Profile({
                 user: userId,
@@ -54,7 +73,11 @@ router.post("/profile",
 
             await newProfile.save();
 
-            res.status(200).json({ message: "Work profile added" });
+            if (newProfile._id) {
+                res.status(200).json({ message: "Work profile added" });
+            } else {
+                res.status(200).json({ message: "Problem while adding work profile" });
+            }
 
         } catch (e) {
             console.error("error => ", e);
@@ -67,11 +90,9 @@ router.use(fetchProfile);
 // update existing work profile
 router.put("/profile", async (req, res) => {
     try {
-
-        const { userId, profileId, headline, summary, industry, industryType, website, location } = req.body;
-
+        const userId = await getUserIdFromToken(req);
+        const { profileId, headline, summary, industry, industryType, website, location } = req.body;
         const filter = { _id: profileId, user: userId };
-
         const update = {
             headline: headline || undefined,
             summary: summary || undefined,
@@ -80,14 +101,12 @@ router.put("/profile", async (req, res) => {
             website: website || undefined,
             location: location || undefined,
         };
-
         const updateProfile = await Profile.updateOne(filter, update);
 
         if (updateProfile.modifiedCount == 1) {
-            res.status(200).json({ message: "Profile updated" });
-        }
-        else {
-            res.status(400).json({ message: "Problem while updating profile. You might have provided another profile id related with another user or vice versa" });
+            res.status(200).json({ message: PROFILE_UPDATED_MESSAGE });
+        } else {
+            res.status(400).json({ message: PROFILE_DELETE_ERROR_MESSAGE });
         }
 
     } catch (e) {
@@ -99,15 +118,13 @@ router.put("/profile", async (req, res) => {
 // delete existing work profile
 router.delete("/profile", async (req, res) => {
     try {
-        const { userId, profileId } = req.body;
+        const userId = await getUserIdFromToken(req);
+        const deleteProfile = await Profile.deleteOne({ user: userId });
 
-        const deletePorfile = await Profile.deleteOne({ user: userId, _id: profileId });
-
-        if (deletePorfile.deletedCount == 1) {
-            res.status(200).json({ message: "Profile deleted" });
-        }
-        else {
-            res.status(400).json({ message: "Problem while deleting profile. You might have provided another profile id related with another user or vice versa" });
+        if (deleteProfile.deletedCount == 1) {
+            res.status(200).json({ message: PROFILE_DELETED_MESSAGE });
+        } else {
+            res.status(400).json({ message: PROFILE_DELETE_ERROR_MESSAGE });
         }
     } catch (e) {
         console.error("error => ", e);
