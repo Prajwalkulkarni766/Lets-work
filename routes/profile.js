@@ -22,9 +22,15 @@ const PROFILE_DELETED_MESSAGE = "Profile deleted";
 const PROFILE_DELETE_ERROR_MESSAGE = "Problem while deleting profile. You might have provided another profile id related to another user or vice versa";
 
 // get profile
-router.get("/profile", async (req, res) => {
+router.get("/profile/:id*?", async (req, res) => {
     try {
-        const userId = await getUserIdFromToken(req);
+        let userId;
+        if (req.params.id) {
+            userId = req.params.id;
+        }
+        else {
+            userId = await getUserId(req.header('token'));
+        }
         const getProfile = await Profile.find({ user: userId });
 
         if (getProfile.length > 0) {

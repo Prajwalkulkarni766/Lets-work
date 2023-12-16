@@ -9,9 +9,15 @@ const getUserId = require("../getUserId");
 router.use(fetchUser);
 
 // get connection
-router.get("/connection", async (req, res) => {
+router.get("/connection/:id*?", async (req, res) => {
     try {
-        const userId = await getUserId(req.header("token"));
+        let userId;
+        if (req.params.id) {
+            userId = req.params.id;
+        }
+        else {
+            userId = await getUserId(req.header("token"));
+        }
 
         const connections = await Connection.find({
             $or: [{ user: userId }, { connectionUserId: userId }],
@@ -27,7 +33,6 @@ router.get("/connection", async (req, res) => {
 // to create or update connection
 router.post("/connection", async (req, res) => {
     try {
-        // Basic validation
         if (!mongoose.Types.ObjectId.isValid(req.body.connectionWith)) {
             return res.status(400).json({ message: "Invalid connection ID" });
         }

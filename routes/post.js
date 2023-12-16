@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const Post = require("../models/post");
 const Like = require("../models/like");
 const Comment = require("../models/comment");
+const Connection = require("../models/connection");
 const fetchUser = require("../middleware/fetchUser");
 const fetchPost = require("../middleware/fetchPost");
 const upload = require("express-fileupload");
@@ -13,6 +14,25 @@ const getUserId = require("../getUserId");
 const fs = require("fs");
 
 router.use(fetchUser);
+
+// to get post
+router.get("/post/:count", async (req, res) => {
+    try {
+        const userId = await getUserId(req.header("token"));
+
+        const startDate = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const endDate = new Date(Date.now());
+
+        // post from last 24 hours
+        const posts = await Post.find({ postDate: { $gte: startDate, $lt: endDate } }).sort({ _id: -1 }).skip(req.params.count).limit(10).lean();
+
+        res.send(posts);
+    }
+    catch (e) {
+        console.error("Error:", e);
+        return res.status(500).json({ message: e.message || "Internal server error" });
+    }
+})
 
 router.use(upload());
 
@@ -104,7 +124,7 @@ router.post("/repost",
 
             console.log(findPost);
 
-            const newPost = await await Post.create({
+            const newPost = await Post.create({
                 user: userId,
                 image: findPost.imagePath || undefined,
                 content: findPost.content,

@@ -39,7 +39,6 @@ router.post(
             });
 
             res.cookie("token", token);
-
             res.status(200).json({ message: "Login successful" });
         } catch (error) {
             console.error("Error: ", error.message);
@@ -89,7 +88,6 @@ router.post(
             });
 
             res.cookie("token", token);
-
             res.status(201).json({ message: "Signup successful" });
         } catch (error) {
             console.error("Error: ", error);

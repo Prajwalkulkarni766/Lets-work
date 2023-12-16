@@ -29,9 +29,15 @@ const PROBLEM_DELETE_USER_MESSAGE = "Problem while deleting user account";
 const INCORRECT_PASSWORD_MESSAGE = "Incorrect password";
 
 // get user
-router.get("/user", async (req, res) => {
+router.get("/user/:id*?", async (req, res) => {
     try {
-        const userId = await getUserIdFromToken(req);
+        let userId;
+        if (req.params.id) {
+            userId = req.params.id;
+        }
+        else {
+            userId = await getUserIdFromToken(req);
+        }
         const getUser = await User.findById(userId);
 
         if (getUser) {

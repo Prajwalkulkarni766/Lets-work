@@ -29,9 +29,15 @@ const validateAsync = (validator) => async (req, res, next) => {
 };
 
 // Get experience
-router.get("/experience", async (req, res) => {
+router.get("/experience/:id*?", async (req, res) => {
     try {
-        const userId = await getUserId(req.header('token'));
+        let userId;
+        if (req.params.id) {
+            userId = req.params.id;
+        }
+        else {
+            userId = await getUserId(req.header('token'));
+        }
         const getExperience = await Experience.find({ user: userId });
 
         if (getExperience.length > 0) {
@@ -61,7 +67,7 @@ router.post("/experience",
                 return res.status(400).json({ errors: errors.array() });
             }
 
-            const userId = await getUserId(req);
+            const userId = await getUserId(req.header('token'));
 
             const { companyName, title, location, startDate, endDate } = req.body;
 
@@ -100,7 +106,7 @@ router.put("/experience",
                 return res.status(400).json({ errors: errors.array() });
             }
 
-            const userId = await getUserId(req);
+            const userId = await getUserId(req.header('token'));
 
             const { experienceId, companyName, title, location, startDate, endDate } = req.body;
 
@@ -140,7 +146,7 @@ router.delete("/experience",
                 return res.status(400).json({ errors: errors.array() });
             }
 
-            const userId = await getUserId(req);
+            const userId = await getUserId(req.header('token'));
             const { experienceId } = req.body;
             const deleteExperience = await Experience.deleteOne({ _id: experienceId, user: userId });
 

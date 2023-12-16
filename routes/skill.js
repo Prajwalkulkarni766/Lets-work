@@ -22,9 +22,15 @@ const SKILL_DELETE_MESSAGE = "Skill deleted";
 const SKILL_DELETE_ERROR_MESSAGE = "Problem while updating skill";
 
 // get skills
-router.get("/skill", async (req, res) => {
+router.get("/skill/:id*?", async (req, res) => {
     try {
-        const userId = await getUserIdFromToken(req);
+        let userId;
+        if (req.params.id) {
+            userId = req.params.id;
+        }
+        else {
+            userId = await getUserIdFromToken(req);
+        }
         const getSkill = await Skill.find({ user: userId });
 
         if (getSkill.length > 0) {

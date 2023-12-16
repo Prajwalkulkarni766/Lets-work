@@ -22,9 +22,15 @@ const validateDegree = body("degree", "Enter valid degree name").isLength({ min:
 const validateFieldOfStudy = body("fieldOfStudy", "Enter valid field of study").isLength({ min: 1 });
 
 // Get education
-router.get("/education", async (req, res) => {
+router.get("/education/:id*?", async (req, res) => {
     try {
-        const userId = await getUserId(req);
+        let userId;
+        if (req.params.id) {
+            userId = req.params.id;
+        }
+        else {
+            userId = await getUserId(req.header('token'));
+        }
         const getEducation = await Education.findOne({ user: userId });
 
         if (getEducation) {
@@ -54,7 +60,7 @@ router.post("/education",
                 return res.status(400).json({ errors: errors.array() });
             }
 
-            const userId = await getUserId(req);
+            const userId = await getUserId(req.header('token'));
             const findEducation = await Education.findOne({ user: userId });
 
             if (findEducation) {
@@ -96,7 +102,7 @@ router.put("/education",
                 return res.status(400).json({ errors: errors.array() });
             }
 
-            const userId = await getUserId(req);
+            const userId = await getUserId(req.header('token'));
             const { educationId, schoolName, secondarySchoolName, collegeName, degree, fieldOfStudy } = req.body;
 
             const filter = { _id: educationId, user: userId };

@@ -29,7 +29,6 @@ router.get("/comment", async (req, res) => {
 // add a comment
 router.post("/comment", async (req, res) => {
     try {
-        // Basic validation
         if (!mongoose.Types.ObjectId.isValid(req.body.postId)) {
             return res.status(400).json({ message: "Invalid post ID" });
         }
@@ -39,7 +38,6 @@ router.post("/comment", async (req, res) => {
             return res.status(400).json({ errors: errors.array() });
         }
 
-        // User identification and data retrieval/manipulation
         const userId = await getUserId(req.header("token"));
         const { postId, commentContent } = req.body;
 
@@ -63,7 +61,6 @@ router.post("/comment", async (req, res) => {
 // remove the comment
 router.delete("/comment", async (req, res) => {
     try {
-        // Basic validation
         if (!mongoose.Types.ObjectId.isValid(req.body.commentId)) {
             return res.status(400).json({ message: "Invalid comment ID" });
         }
@@ -73,7 +70,6 @@ router.delete("/comment", async (req, res) => {
             return res.status(400).json({ errors: errors.array() });
         }
 
-        // User identification and data retrieval/manipulation
         const userId = await getUserId(req.header("token"));
         const { commentId } = req.body;
 
@@ -86,7 +82,6 @@ router.delete("/comment", async (req, res) => {
         }
 
         await Comment.findByIdAndDelete(commentId);
-
         res.status(200).json({ message: "Comment deleted" });
     } catch (error) {
         console.error(error);
