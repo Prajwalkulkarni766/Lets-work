@@ -41,6 +41,10 @@ app.get("/:id", (req, res) => {
     const currentDirectory = process.cwd();
     let profile_image_url = path.join(currentDirectory, 'docs', req.params.id);
     res.sendFile(profile_image_url);
+});
+
+app.use((req, res) => {
+    res.json({ message: "404 ! Not found" })
 })
 
 app.listen(3000);
