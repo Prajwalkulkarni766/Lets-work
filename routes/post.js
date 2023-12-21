@@ -17,14 +17,12 @@ router.use(fetchUser);
 // to get post
 router.get("/post/(:startDate&:endDate)?&:count", async (req, res) => {
   try {
-
     const userId = await getUserId(req.header("token"));
 
     if (req.params.startDate && req.params.endDate) {
       var startDate = new Date(req.params.startDate);
       var endDate = new Date(req.params.endDate);
-    }
-    else {
+    } else {
       var startDate = new Date();
       startDate.setDate(startDate.getDate() - 1);
       var endDate = new Date();
@@ -49,13 +47,14 @@ router.get("/post/(:startDate&:endDate)?&:count", async (req, res) => {
         temp = startDate;
         endDate = new Date(`${temp}`);
         startDate.setDate(startDate.getDate() - 1);
-        console.log(`checking from date : ${startDate} and to date : ${endDate}`);
+        // console.log(
+        //   `checking from date : ${startDate} and to date : ${endDate}`
+        // );
         index++;
       }
     }
 
     res.json({ startDate, endDate, posts });
-
   } catch (e) {
     console.error("Error:", e);
     return res
@@ -135,7 +134,7 @@ router.post(
       if (newPost._id) {
         res.status(200).json({ message: "Success", postId: newPost._id });
       } else {
-        res.status(200).json({ message: "Problem while uploading post" });
+        res.status(400).json({ message: "Problem while uploading post" });
       }
     } catch (e) {
       console.error("Error:", e);

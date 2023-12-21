@@ -86,7 +86,7 @@ router.post(
       if (newExperience._id) {
         res.status(200).json({ message: "Experience added" });
       } else {
-        res.status(200).json({ message: "Problem while adding experience" });
+        res.status(400).json({ message: "Problem while adding experience" });
       }
     } catch (e) {
       console.error("error => ", e);
@@ -160,7 +160,7 @@ router.delete(
       if (deleteExperience.deletedCount == 1) {
         res.status(200).json({ message: "Experience deleted" });
       } else {
-        res.status(200).json({ message: "Problme while deleting experience" });
+        res.status(400).json({ message: "Problme while deleting experience" });
       }
     } catch (e) {
       console.error("error => ", e);
