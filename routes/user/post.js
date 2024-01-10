@@ -2,15 +2,17 @@ const express = require("express");
 const router = express.Router();
 const { body, validationResult } = require("express-validator");
 const mongoose = require("mongoose");
-const Post = require("../models/post");
-const Like = require("../models/like");
-const Comment = require("../models/comment");
-const fetchUser = require("../middleware/fetchUser");
-const fetchPost = require("../middleware/fetchPost");
+const Post = require("../../models/user/post");
+const Like = require("../../models/user/like");
+const Comment = require("../../models/user/comment");
+const Connection = require("../../models/user/connection");
+const fetchUser = require("../../middleware/user/fetchUser");
+const fetchPost = require("../../middleware/user/fetchPost");
 const upload = require("express-fileupload");
 const path = require("path");
-const getUserId = require("../getUserId");
+const getUserId = require("../../utils/getUserId");
 const fs = require("fs");
+const {sendPostNotifications} = require("../../utils/notificationSender");
 
 router.use(fetchUser);
 
@@ -47,12 +49,15 @@ router.get("/post/(:startDate&:endDate)?&:count", async (req, res) => {
         temp = startDate;
         endDate = new Date(`${temp}`);
         startDate.setDate(startDate.getDate() - 1);
-        // console.log(
-        //   `checking from date : ${startDate} and to date : ${endDate}`
-        // );
         index++;
       }
     }
+
+    posts.forEach((post) => {
+      if (post.image) {
+        post.image = `http://${req.get('host')}${post.image}`;
+      }
+    })
 
     res.json({ startDate, endDate, posts });
   } catch (e) {
@@ -92,7 +97,7 @@ const uploadFile = async (file, destinationPath) => {
   const uniqueFileName = Date.now() + "-" + file.name;
 
   await new Promise((resolve, reject) => {
-    file.mv(path.join("./docs", uniqueFileName), (err) => {
+    file.mv(path.join("./post/post-images", uniqueFileName), (err) => {
       if (err) {
         console.error("Error uploading file:", err);
         reject(new Error("File upload failed"));
@@ -102,12 +107,11 @@ const uploadFile = async (file, destinationPath) => {
     });
   });
 
-  return "/docs/" + uniqueFileName;
+  return "/post/post-images/" + uniqueFileName;
 };
 
 // Create Post
-router.post(
-  "/post",
+router.post("/post",
   body("postContent", "Post content cannot be empty").isLength({ min: 1 }),
   async (req, res) => {
     try {
@@ -119,7 +123,7 @@ router.post(
 
       let imagePath = "";
       if (req.files && req.files.image) {
-        imagePath = await uploadFile(req.files.image, "./docs");
+        imagePath = await uploadFile(req.files.image, "./post/post-images");
       }
 
       const userId = await getUserId(req.header("token"));
@@ -133,6 +137,7 @@ router.post(
 
       if (newPost._id) {
         res.status(200).json({ message: "Success", postId: newPost._id });
+        sendPostNotifications(userId);
       } else {
         res.status(400).json({ message: "Problem while uploading post" });
       }
@@ -145,7 +150,7 @@ router.post(
   }
 );
 
-// router.use(fetchPost);
+router.use(fetchPost);
 
 // repost the post
 router.post("/repost", async (req, res) => {
@@ -209,7 +214,7 @@ router.put(
 
       let imagePath = "";
       if (req.files && req.files.image) {
-        imagePath = await uploadFile(req.files.image, "./docs");
+        imagePath = await uploadFile(req.files.image, "./post/post-images");
       }
 
       const updatePost = await Post.findByIdAndUpdate(postId, {

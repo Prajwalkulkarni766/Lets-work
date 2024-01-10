@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const Post = require("../models/post");
+const Post = require("../../models/user/post");
 
 const fetchPost = async (req, res, next) => {
     try {

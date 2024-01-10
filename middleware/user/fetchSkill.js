@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const Skill = require("../models/skill");
+const Skill = require("../../models/user/skill");
 
 const fetchSkill = async (req, res, next) => {
     try {

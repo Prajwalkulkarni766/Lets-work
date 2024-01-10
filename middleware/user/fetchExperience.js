@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const Experience = require("../models/experience");
+const Experience = require("../../models/user/experience");
 
 const fetchExperience = async (req, res, next) => {
     try {

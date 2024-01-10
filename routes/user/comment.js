@@ -2,13 +2,12 @@ const express = require("express")
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const mongoose = require('mongoose');
-const Comment = require("../models/comment");
-const fetchUser = require("../middleware/fetchUser");
-const fetchPost = require("../middleware/fetchPost");
-const getUserId = require("../getUserId");
+const Comment = require("../../models/user/comment");
+const fetchUser = require("../../middleware/user/fetchUser");
+const fetchPost = require("../../middleware/user/fetchPost");
+const getUserId = require("../../utils/getUserId");
 
 router.use(fetchUser);
-
 router.use(fetchPost);
 
 // get comments

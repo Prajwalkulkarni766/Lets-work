@@ -1,4 +1,5 @@
-const { Schema, model, default: mongoose } = require("mongoose");
+const mongoose = require("mongoose");
+const { Schema, model } = mongoose;
 
 const postsSchema = new Schema({
     user: {

@@ -1,9 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
-const Education = require("../models/education");
-const fetchUser = require("../middleware/fetchUser");
-const getUserId = require("../getUserId");
+const Education = require("../../models/user/education");
+const fetchUser = require("../../middleware/user/fetchUser");
+const getUserId = require("../../utils/getUserId");
 
 router.use(fetchUser);
 

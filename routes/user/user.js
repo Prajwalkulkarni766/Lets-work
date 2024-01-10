@@ -2,31 +2,15 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
 const { body, validationResult } = require("express-validator");
-const User = require("../models/user");
-const fetchUser = require("../middleware/fetchUser");
+const User = require("../../models/user/user");
+const fetchUser = require("../../middleware/user/fetchUser");
 const upload = require("express-fileupload");
 const path = require("path");
-const getUserId = require("../getUserId");
+const getUserId = require("../../utils/getUserId");
 
 router.use(fetchUser);
 
 router.use(upload());
-
-// Centralized User ID Retrieval
-const getUserIdFromToken = async (req) => {
-  return await getUserId(req.header("token"));
-};
-
-// Constants for Response Messages
-const SUCCESS_MESSAGE = "Success";
-const USER_NOT_FOUND_MESSAGE = "User not found";
-const INVALID_AUTHORIZATION_MESSAGE = "Invalid user authorization";
-const PROFILE_IMAGE_UPLOADED_MESSAGE = "Profile image uploaded";
-const INFORMATION_UPDATED_MESSAGE = "Information updated";
-const PROBLEM_UPDATE_USER_MESSAGE = "Problem while updating user";
-const USER_DELETED_MESSAGE = "User account successfully deleted";
-const PROBLEM_DELETE_USER_MESSAGE = "Problem while deleting user account";
-const INCORRECT_PASSWORD_MESSAGE = "Incorrect password";
 
 // get user
 router.get("/user/:id*?", async (req, res) => {
@@ -35,14 +19,17 @@ router.get("/user/:id*?", async (req, res) => {
     if (req.params.id) {
       userId = req.params.id;
     } else {
-      userId = await getUserIdFromToken(req);
+      userId = await getUserId(req.header("token"));
     }
-    const getUser = await User.findById(userId);
+    const getUser = await User.findById(userId).select("-password");
 
     if (getUser) {
+      if (getUser.profilePic) {
+        getUser.profilePic = `http://${req.get('host')}${getUser.profilePic}`;
+      }
       res.status(200).json(getUser);
     } else {
-      res.status(400).json({ message: USER_NOT_FOUND_MESSAGE });
+      res.status(400).json({ message: "User not found" });
     }
   } catch (e) {
     console.error("error => ", e);
@@ -53,7 +40,7 @@ router.get("/user/:id*?", async (req, res) => {
 // upload profile image
 router.post("/user", async (req, res) => {
   try {
-    const userId = await getUserIdFromToken(req);
+    const userId = await getUserId(req.header("token"));
     const getUser = await User.findById(userId);
 
     if (getUser.profilePic && getUser.profilePic !== "") {
@@ -84,14 +71,14 @@ router.post("/user", async (req, res) => {
     };
 
     const destinationPath = await mvFileAsync(
-      path.join("./docs", uniqueFileName)
+      path.join("./post/profile-images", uniqueFileName)
     );
 
-    const update = { profilePic: "/docs/" + uniqueFileName };
+    const update = { profilePic: "/post/profile-images/" + uniqueFileName };
 
     const updateUser = await User.findByIdAndUpdate(userId, update);
 
-    res.status(200).json({ message: PROFILE_IMAGE_UPLOADED_MESSAGE });
+    res.status(200).json({ message: "Profile image uploaded" });
   } catch (e) {
     console.error("error => ", e);
     return res.status(500).json({ message: "Internal server error" });
@@ -140,7 +127,7 @@ router.put("/user", async (req, res) => {
     const updateUser = await User.findOneAndUpdate(filter, update);
 
     if (updateUser) {
-      res.status(200).json({ message: INFORMATION_UPDATED_MESSAGE });
+      res.status(200).json({ message: "Information updated" });
     } else {
       res.status(400).json({ message: PROBLEM_UPDATE_USER_MESSAGE });
     }
@@ -172,7 +159,7 @@ router.delete(
       );
 
       if (!existingUser) {
-        return res.status(400).json({ message: USER_NOT_FOUND_MESSAGE });
+        return res.status(400).json({ message: "User not found" });
       }
 
       const passwordMatch = await bcrypt.compare(
@@ -181,15 +168,15 @@ router.delete(
       );
 
       if (!passwordMatch) {
-        return res.status(400).json({ message: INCORRECT_PASSWORD_MESSAGE });
+        return res.status(400).json({ message: "Incorrect password" });
       }
 
       const deleteUser = await User.findOneAndDelete({ email: userEmail });
 
       if (deleteUser) {
-        res.status(200).json({ message: USER_DELETED_MESSAGE });
+        res.status(200).json({ message: "User account successfully deleted" });
       } else {
-        res.status(400).json({ message: PROBLEM_DELETE_USER_MESSAGE });
+        res.status(400).json({ message: "Problem while deleting user account" });
       }
     } catch (e) {
       console.error("error => ", e);

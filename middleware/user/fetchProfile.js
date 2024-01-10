@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const Profile = require("../models/profile");
+const Profile = require("../../models/user/userProfile");
 
 const fetchProfile = async (req, res, next) => {
     try {

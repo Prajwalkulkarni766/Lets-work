@@ -1,25 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const { body, validationResult } = require("express-validator");
-const Skill = require("../models/skill");
-const fetchUser = require("../middleware/fetchUser");
-const fetchSkill = require("../middleware/fetchSkill");
-const getUserId = require("../getUserId");
+const Skill = require("../../models/user/skill");
+const fetchUser = require("../../middleware/user/fetchUser");
+const fetchSkill = require("../../middleware/user/fetchSkill");
+const getUserId = require("../../utils/getUserId");
 
 router.use(fetchUser);
-
-// Centralized User ID Retrieval
-const getUserIdFromToken = async (req) => {
-  return await getUserId(req.header("token"));
-};
-
-// Constants for Response Messages
-const SUCCESS_MESSAGE = "Success";
-const SKILL_NOT_FOUND_MESSAGE = "Skill not found";
-const SKILL_ADDED_MESSAGE = "New skill added";
-const SKILL_UPDATE_MESSAGE = "Skills updated";
-const SKILL_DELETE_MESSAGE = "Skill deleted";
-const SKILL_DELETE_ERROR_MESSAGE = "Problem while updating skill";
 
 // get skills
 router.get("/skill/:id*?", async (req, res) => {
@@ -28,14 +15,14 @@ router.get("/skill/:id*?", async (req, res) => {
     if (req.params.id) {
       userId = req.params.id;
     } else {
-      userId = await getUserIdFromToken(req);
+      userId = await getUserId(req.header('token'));
     }
     const getSkill = await Skill.find({ user: userId });
 
     if (getSkill.length > 0) {
       res.status(200).json(getSkill);
     } else {
-      res.status(400).json({ message: SKILL_NOT_FOUND_MESSAGE });
+      res.status(400).json({ message: "Skill not found" });
     }
   } catch (e) {
     console.error("error => ", e);
@@ -55,7 +42,7 @@ router.post(
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const userId = await getUserIdFromToken(req);
+      const userId = await getUserId(req.header('token'));
       const { name } = req.body;
 
       const newSkill = await Skill({
@@ -66,7 +53,7 @@ router.post(
       await newSkill.save();
 
       if (newSkill._id) {
-        res.status(200).json({ message: SKILL_ADDED_MESSAGE });
+        res.status(200).json({ message: "New skill added" });
       } else {
         res.status(400).json({ message: "Problem while adding new skill" });
       }
@@ -91,7 +78,7 @@ router.put(
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const userId = await getUserIdFromToken(req);
+      const userId = await getUserId(req.header('token'));
       const { skillId, name } = req.body;
 
       const filter = { _id: skillId, user: userId };
@@ -100,7 +87,7 @@ router.put(
       const updateSkill = await Skill.updateOne(filter, update);
 
       if (updateSkill.modifiedCount == 1) {
-        res.status(200).json({ message: SKILL_UPDATE_MESSAGE });
+        res.status(200).json({ message: "Skills updated" });
       } else {
         res.status(400).json({ message: "Problem while updating skill" });
       }
@@ -114,15 +101,15 @@ router.put(
 // delete the existing skill
 router.delete("/skill", async (req, res) => {
   try {
-    const userId = await getUserIdFromToken(req);
+    const userId = await getUserId(req.header('token'));
     const { skillId } = req.body;
 
     const deleteSkill = await Skill.deleteOne({ _id: skillId, user: userId });
 
     if (deleteSkill.deletedCount == 1) {
-      res.status(200).json({ message: SKILL_DELETE_MESSAGE });
+      res.status(200).json({ message:"Skill deleted" });
     } else {
-      res.status(400).json({ message: SKILL_DELETE_ERROR_MESSAGE });
+      res.status(400).json({ message: "Problem while updating skill" });
     }
   } catch (e) {
     console.error("error => ", e);

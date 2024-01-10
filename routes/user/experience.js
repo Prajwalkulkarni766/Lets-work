@@ -1,20 +1,17 @@
 const express = require("express");
 const router = express.Router();
 const { body, validationResult } = require("express-validator");
-const Experience = require("../models/experience");
-const fetchUser = require("../middleware/fetchUser");
-const getUserId = require("../getUserId");
-const fetchExperience = require("../middleware/fetchExperience");
+const Experience = require("../../models/user/experience");
+const fetchUser = require("../../middleware/user/fetchUser");
+const getUserId = require("../../utils/getUserId");
+const fetchExperience = require("../../middleware/user/fetchExperience");
 
 router.use(fetchUser);
-
-// Constants for Validation Messages
-const VALIDATION_ERROR_MESSAGE = "Enter a valid experience id";
 
 // Validation middleware
 const validateExperienceId = body("experienceId").custom((value) => {
   if (!mongoose.Types.ObjectId.isValid(value)) {
-    return Promise.reject(VALIDATION_ERROR_MESSAGE);
+    return Promise.reject("Enter a valid experience id");
   }
   return Promise.resolve();
 });

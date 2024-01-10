@@ -3,8 +3,11 @@ const router = express.Router();
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { body, validationResult } = require("express-validator");
-const User = require("../models/user");
+const User = require("../../models/user/user");
 const secreteKey = process.env.JWT_SECRET_KEY;
+const Notification = require("../../models/notification");
+const notificationMessages = require("../../utils/notificationMessages");
+const { sendSignupNotification } = require("../../utils/notificationSender");
 
 // Login
 router.post(
@@ -13,7 +16,7 @@ router.post(
     body("userPassword")
         .isLength({ min: 8, max: 16 })
         .withMessage(
-            "Enter a valid password. Password must be between 8 and 16 characters."
+            "Enter a valid password."
         ),
     async (req, res) => {
         try {
@@ -54,10 +57,9 @@ router.post(
     body("userLocation").isLength({ min: 1 }).withMessage("Enter a valid location"),
     body("userEmail").isEmail().withMessage("Enter a valid email"),
     body("userPassword")
+        .notEmpty()
         .isLength({ min: 8, max: 16 })
-        .withMessage(
-            "Enter a valid password. Password must be between 8 and 16 characters."
-        ),
+        .withMessage("Password must contain at least one alphabet, one number, and one special symbol and lenght should be between 8 to 16"),
     async (req, res) => {
         try {
             const errors = validationResult(req);
@@ -68,6 +70,7 @@ router.post(
             const { userName, userEmail, userPassword, userLocation } = req.body;
 
             const existingUser = await User.findOne({ email: userEmail });
+
             if (existingUser) {
                 return res.status(400).json({ message: "User with this email already exists" });
             }
@@ -86,9 +89,11 @@ router.post(
             const token = jwt.sign({ userId: newUser._id }, secreteKey, {
                 expiresIn: 86400,
             });
-
             res.cookie("token", token);
             res.status(201).json({ message: "Signup successful" });
+
+            await sendSignupNotification(newUser._id, userName);
+
         } catch (error) {
             console.error("Error: ", error);
             res.status(500).json({ message: "Internal server error" });

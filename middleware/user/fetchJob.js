@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const Job = require("../models/job");
+const Job = require("../../models/organization/job");
 
 const fetchJob = async (req, res, next) => {
     try {
