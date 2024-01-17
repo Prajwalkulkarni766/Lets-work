@@ -1,5 +1,4 @@
 const { Schema, model } = require("mongoose");
-
 const userProfileSchema = new Schema({
     user: {
         type: Schema.Types.ObjectId,
@@ -13,6 +12,5 @@ const userProfileSchema = new Schema({
     website: { type: String, default: "" },
     location: { type: String, required: true },
 });
-
 const UserProfile = model("UserProfile", userProfileSchema);
 module.exports = UserProfile;

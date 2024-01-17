@@ -1,5 +1,4 @@
 const { Schema, model } = require("mongoose");
-
 const organizationProfileSchema = new Schema({
     organization: {
         type: Schema.Types.ObjectId,
@@ -10,6 +9,5 @@ const organizationProfileSchema = new Schema({
     description: { type: String, required: true },
     location: { type: String, required: true },
 });
-
 const OrganizationProfile = model("OrganizationProfile", organizationProfileSchema);
 module.exports = OrganizationProfile;

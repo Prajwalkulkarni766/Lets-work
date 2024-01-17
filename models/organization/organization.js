@@ -1,5 +1,4 @@
 const { Schema, model, default: mongoose } = require("mongoose");
-
 const organization = new Schema({
     name: {
         type: String,
@@ -22,6 +21,5 @@ const organization = new Schema({
         default: Date.now
     },
 });
-
 const Organization = model("Organization", organization);
 module.exports = Organization;

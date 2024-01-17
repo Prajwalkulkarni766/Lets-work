@@ -1,5 +1,4 @@
 const { Schema, model, default: mongoose } = require("mongoose");
-
 const experienceSchema = new Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
@@ -12,6 +11,5 @@ const experienceSchema = new Schema({
     startDate: { type: Date, required: true },
     endDate: { type: Date, required: true },
 });
-
 const Experience = model("Experience", experienceSchema);
 module.exports = Experience;

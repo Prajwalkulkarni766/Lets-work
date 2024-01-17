@@ -1,5 +1,4 @@
 const { Schema, model, default: mongoose } = require("mongoose");
-
 const educationSchema = new Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
@@ -12,6 +11,5 @@ const educationSchema = new Schema({
     degree: { type: String, required: true },
     fieldOfStudy: { type: String, required: true },
 });
-
 const Education = model("Education", educationSchema);
 module.exports = Education;

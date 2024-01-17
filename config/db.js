@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 const dotenvConfig = require("../config/dotenv");
-
 const connectToMongoose = async () => {
   try {
     await mongoose.connect(`${dotenvConfig.MONGO_URI}`);
@@ -9,5 +8,4 @@ const connectToMongoose = async () => {
     console.log("Not connected", e);
   }
 };
-
 module.exports = connectToMongoose;

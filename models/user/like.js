@@ -1,5 +1,4 @@
 const { Schema, model, default: mongoose } = require("mongoose");
-
 const likeSchema = new Schema({
     post:{
         type: mongoose.Schema.Types.ObjectId,
@@ -12,6 +11,5 @@ const likeSchema = new Schema({
         ref: 'User'
     },
 });
-
 const Like = model("Like", likeSchema);
 module.exports = Like;

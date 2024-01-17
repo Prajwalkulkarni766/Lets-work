@@ -1,5 +1,4 @@
 const { Schema, model, default: mongoose } = require("mongoose");
-
 const connectionSchema = new Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
@@ -15,6 +14,5 @@ const connectionSchema = new Schema({
         type: String
     },
 });
-
 const Connection = model("Connection", connectionSchema);
 module.exports = Connection;

@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-
 const jobAdvertisementSchema = new mongoose.Schema({
     organization: {
         type: mongoose.Schema.Types.ObjectId,
@@ -43,6 +42,5 @@ const jobAdvertisementSchema = new mongoose.Schema({
         default: Date.now,
     },
 });
-
 const JobAdvertisement = mongoose.model('JobAdvertisement', jobAdvertisementSchema);
 module.exports = JobAdvertisement;

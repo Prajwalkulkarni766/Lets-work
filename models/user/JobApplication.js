@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-
 const jobApplicationSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
@@ -24,6 +23,5 @@ const jobApplicationSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
-
 const JobApplication = mongoose.model('JobApplication', jobApplicationSchema);
 module.exports = JobApplication;

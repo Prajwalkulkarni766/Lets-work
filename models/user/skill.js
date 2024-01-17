@@ -1,5 +1,4 @@
 const { Schema, model, default: mongoose } = require("mongoose");
-
 const skillsSchema = new Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
@@ -8,6 +7,5 @@ const skillsSchema = new Schema({
     },
     name: { type: String, required: true },
 });
-
 const Skill = model("Skill", skillsSchema);
 module.exports = Skill;

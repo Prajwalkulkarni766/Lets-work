@@ -1,5 +1,4 @@
 const { Schema, model, default: mongoose } = require("mongoose");
-
 const notificationSchema = new Schema({
     notificationTo: {
         type: mongoose.Schema.Types.ObjectId,
@@ -23,6 +22,5 @@ const notificationSchema = new Schema({
         default: Date.now
     },
 });
-
 const Notification = model("Notification", notificationSchema);
 module.exports = Notification;

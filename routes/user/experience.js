@@ -1,3 +1,4 @@
+const fs = require("fs");
 const express = require("express");
 const router = express.Router();
 const { body, validationResult } = require("express-validator");
@@ -5,18 +6,13 @@ const Experience = require("../../models/user/experience");
 const fetchUser = require("../../middleware/user/fetchUser");
 const getUserId = require("../../utils/getUserId");
 const fetchExperience = require("../../middleware/user/fetchExperience");
-
 router.use(fetchUser);
-
-// Validation middleware
 const validateExperienceId = body("experienceId").custom((value) => {
   if (!mongoose.Types.ObjectId.isValid(value)) {
     return Promise.reject("Enter a valid experience id");
   }
   return Promise.resolve();
 });
-
-// Async variant of validation middleware
 const validateAsync = (validator) => async (req, res, next) => {
   await validator(req).run(req);
   const errors = validationResult(req);
@@ -25,8 +21,6 @@ const validateAsync = (validator) => async (req, res, next) => {
   }
   next();
 };
-
-// Get experience
 router.get("/experience/:id*?", async (req, res) => {
   try {
     let userId;
@@ -36,19 +30,22 @@ router.get("/experience/:id*?", async (req, res) => {
       userId = await getUserId(req.header("token"));
     }
     const getExperience = await Experience.find({ user: userId });
-
     if (getExperience.length > 0) {
       res.status(200).json(getExperience);
     } else {
       res.status(400).json({ message: "Experience not found" });
     }
-  } catch (e) {
-    console.error("error => ", e);
-    return res.status(500).json({ message: "Internal server error" });
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error" });
+    const now = new Date();
+    const dateString = `${now.getDate()}/${now.getMonth() + 1
+      }/${now.getFullYear()}`;
+    const dataToBeLogged = `Request url: ${req.protocol}://${req.hostname}:port${req.originalUrl}\nRequest date: ${dateString}\nRequest body: ${JSON.stringify(req.body)}\nRequest error: ${error}\n\n`;
+    fs.appendFile(`${process.cwd()}/error.log`, dataToBeLogged, function (err) {
+      if (err) throw err;
+    });
   }
 });
-
-// Add a new experience
 router.post(
   "/experience",
   validateAsync(validateExperienceId),
@@ -60,15 +57,11 @@ router.post(
   async (req, res) => {
     try {
       const errors = validationResult(req);
-
       if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
       }
-
       const userId = await getUserId(req.header("token"));
-
       const { companyName, title, location, startDate, endDate } = req.body;
-
       const newExperience = await Experience({
         user: userId,
         companyName: companyName,
@@ -77,42 +70,38 @@ router.post(
         startDate: startDate,
         endDate: endDate,
       });
-
       await newExperience.save();
-
       if (newExperience._id) {
         res.status(200).json({ message: "Experience added" });
       } else {
         res.status(400).json({ message: "Problem while adding experience" });
       }
-    } catch (e) {
-      console.error("error => ", e);
-      return res.status(500).json({ message: "Internal server error" });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+      const now = new Date();
+      const dateString = `${now.getDate()}/${now.getMonth() + 1
+        }/${now.getFullYear()}`;
+      const dataToBeLogged = `Request url: ${req.protocol}://${req.hostname}:port${req.originalUrl}\nRequest date: ${dateString}\nRequest body: ${JSON.stringify(req.body)}\nRequest error: ${error}\n\n`;
+      fs.appendFile(`${process.cwd()}/error.log`, dataToBeLogged, function (err) {
+        if (err) throw err;
+      });
     }
   }
 );
-
 router.use(fetchExperience);
-
-// Update the existing experience
 router.put(
   "/experience",
   validateAsync(validateExperienceId),
   async (req, res) => {
     try {
       const errors = validationResult(req);
-
       if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
       }
-
       const userId = await getUserId(req.header("token"));
-
       const { experienceId, companyName, title, location, startDate, endDate } =
         req.body;
-
       const filter = { _id: experienceId, user: userId };
-
       const update = {
         companyName: companyName || undefined,
         title: title || undefined,
@@ -120,50 +109,54 @@ router.put(
         startDate: startDate || undefined,
         endDate: endDate || undefined,
       };
-
       const updateExperience = await Experience.updateOne(filter, update);
-
       if (updateExperience.modifiedCount == 1) {
         res.status(200).json({ message: "Experience updated" });
       } else {
         res.status(400).json({ message: "Problem while updating experience" });
       }
-    } catch (e) {
-      console.error("error => ", e);
-      return res.status(500).json({ message: "Internal server error" });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+      const now = new Date();
+      const dateString = `${now.getDate()}/${now.getMonth() + 1
+        }/${now.getFullYear()}`;
+      const dataToBeLogged = `Request url: ${req.protocol}://${req.hostname}:port${req.originalUrl}\nRequest date: ${dateString}\nRequest body: ${JSON.stringify(req.body)}\nRequest error: ${error}\n\n`;
+      fs.appendFile(`${process.cwd()}/error.log`, dataToBeLogged, function (err) {
+        if (err) throw err;
+      });
     }
   }
 );
-
-// Delete the existing experience
 router.delete(
   "/experience",
   validateAsync(validateExperienceId),
   async (req, res) => {
     try {
       const errors = validationResult(req);
-
       if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
       }
-
       const userId = await getUserId(req.header("token"));
       const { experienceId } = req.body;
       const deleteExperience = await Experience.deleteOne({
         _id: experienceId,
         user: userId,
       });
-
       if (deleteExperience.deletedCount == 1) {
         res.status(200).json({ message: "Experience deleted" });
       } else {
         res.status(400).json({ message: "Problme while deleting experience" });
       }
-    } catch (e) {
-      console.error("error => ", e);
-      return res.status(500).json({ message: "Internal server error" });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+      const now = new Date();
+      const dateString = `${now.getDate()}/${now.getMonth() + 1
+        }/${now.getFullYear()}`;
+      const dataToBeLogged = `Request url: ${req.protocol}://${req.hostname}:port${req.originalUrl}\nRequest date: ${dateString}\nRequest body: ${JSON.stringify(req.body)}\nRequest error: ${error}\n\n`;
+      fs.appendFile(`${process.cwd()}/error.log`, dataToBeLogged, function (err) {
+        if (err) throw err;
+      });
     }
   }
 );
-
 module.exports = router;

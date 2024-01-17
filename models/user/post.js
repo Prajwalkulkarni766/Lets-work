@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 const { Schema, model } = mongoose;
-
 const postsSchema = new Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
@@ -11,6 +10,5 @@ const postsSchema = new Schema({
     content: { type: String, required: true },
     postDate: { type: Date, default: Date.now },
 });
-
 const Post = model("Post", postsSchema);
 module.exports = Post;

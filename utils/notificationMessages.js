@@ -24,5 +24,4 @@ const notificationMessages = {
         content: "Hello ${applicantName}, Congratulations! Your job application for the position of ${jobPosition} has been shortlisted. We are impressed with your qualifications and would like to invite you for the next steps in the hiring process. Please be prepared for a possible interview or additional assessments. If you have any questions or need further information, feel free to reach out. Best of luck! Sincerely, The ${organizationName} Hiring Team",
     },
 };
-
 module.exports = notificationMessages;
